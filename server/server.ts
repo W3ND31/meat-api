@@ -1,9 +1,11 @@
 import * as restify from "restify";
+import { environment } from "../common/environment";
+import { Router } from "../common/router";
 
 export class Server {
   application: restify.Server;
 
-  initRoutes(): Promise<any> {
+  initRoutes(routers: Router[]): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
         this.application = restify.createServer({
@@ -13,31 +15,9 @@ export class Server {
 
         this.application.use(restify.plugins.queryParser());
 
-        this.application.get("/info", [
-          (req, resp, next) => {
-            const browsers: RegExp = new RegExp(/Chrome|Mozilla|MSIE|Apple|Safari/);
-            if (req.userAgent() && browsers.test(req.userAgent())) {
-              let error: any = new Error();
-              error.statusCode = 400;
-              error.name = "Browsers not allowed";
-              error.message = "Please, use postman!";
-              return next(error);
-            }
-            return next();
-          },
-          (req, resp, next) => {
-            resp.json({
-              browser: req.userAgent(),
-              method: req.method,
-              url: req.href(),
-              path: req.path(),
-              query: req.query,
-            });
-            return next();
-          },
-        ]);
+        routers.forEach((r) => r.applyRoutes(this.application));
 
-        this.application.listen(3000, () => {
+        this.application.listen(environment.server.port, () => {
           resolve(this.application);
         });
       } catch (error) {
@@ -45,8 +25,8 @@ export class Server {
       }
     });
   }
-  async bootstrap(): Promise<Server> {
-    await this.initRoutes();
+  async bootstrap(routers: Router[] = []): Promise<Server> {
+    await this.initRoutes(routers);
     return this;
   }
 }
