@@ -1,4 +1,6 @@
 import * as restify from "restify";
+import * as mongoose from "mongoose";
+
 import { environment } from "../common/environment";
 import { Router } from "../common/router";
 
@@ -25,8 +27,15 @@ export class Server {
       }
     });
   }
-  async bootstrap(routers: Router[] = []): Promise<Server> {
-    await this.initRoutes(routers);
-    return this;
+
+  initializeDb(): mongoose.MongooseThenable {
+    (<any>mongoose).Promise = global.Promise;
+    return mongoose.connect(environment.db.url, {
+      useMongoClient: true,
+    });
+  }
+
+  bootstrap(routers: Router[] = []): Promise<Server> {
+    return this.initializeDb().then(() => this.initRoutes(routers).then(() => this));
   }
 }
