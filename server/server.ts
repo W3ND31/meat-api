@@ -3,6 +3,7 @@ import * as mongoose from "mongoose";
 
 import { environment } from "../common/environment";
 import { Router } from "../common/router";
+import { mergePatchBodyParser } from "./merge-patch.parser";
 
 export class Server {
   application: restify.Server;
@@ -15,7 +16,7 @@ export class Server {
           version: "1.0.0",
         });
 
-        this.application.use(restify.plugins.queryParser());
+        this.application.use(restify.plugins.queryParser(), restify.plugins.bodyParser(), mergePatchBodyParser);
 
         routers.forEach((r) => r.applyRoutes(this.application));
 
